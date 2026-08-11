@@ -114,6 +114,32 @@ mousectl led brightness 200
 # DPI
 mousectl dpi set 1600
 mousectl dpi set 1600 2400   # X e Y distintos
+
+# Botones
+mousectl button list
+mousectl button set-button 3 1              # botón 3 -> click del botón físico 1
+mousectl button set-special 4 doubleclick   # botón 4 -> doble clic
+mousectl button set-macro 5 "press:30,release:30,press:31,release:31"
+mousectl button disable 6
+```
+
+### Sobre los keycodes de macros
+
+`button set-macro` espera una lista de eventos `press:KEYCODE` / `release:KEYCODE`
+separados por comas, **en orden**. El `KEYCODE` es el código HID de teclado que
+usa `ratbagd` internamente para el evento — en la práctica, para teclas
+alfanuméricas y de función coincide con las constantes `KEY_*` de
+`linux/input-event-codes.h` (ej. `KEY_A = 30`, `KEY_B = 48`, `KEY_LEFTCTRL = 29`).
+Puedes consultarlas con:
+
+```bash
+grep -E "define KEY_[A-Z0-9_]+\s+[0-9]" /usr/include/linux/input-event-codes.h
+```
+
+Ejemplo — macro que envía "Ctrl+C" (keydown Ctrl, keydown C, keyup C, keyup Ctrl):
+
+```bash
+mousectl button set-macro 5 "press:29,press:46,release:46,release:29"
 ```
 
 Todos los comandos que modifican estado aceptan `--no-commit` para dejar el
@@ -123,7 +149,7 @@ cambio en el buffer del dispositivo sin escribirlo a hardware (equivalente al
 ## Estructura
 
 ```
-src/
+src/mousectl/
 ├── exceptions.py       # Excepciones de dominio
 ├── dbus/
 │   ├── constants.py     # Nombres de bus/interfaces
@@ -133,7 +159,11 @@ src/
 │   ├── device.py         # Device: enumera dispositivos, perfil activo, commit()
 │   ├── profile.py        # Profile: resoluciones, botones, leds
 │   ├── resolution.py     # Resolution/Dpi
-│   ├── button.py         # Button/ActionType
+│   ├── button.py         # Button/ActionType/SpecialFunction/MacroEvent (API real: Mapping (uv))
 │   └── led.py             # Led/LedMode/Color (con validación y from_hex)
 └── cli.py                # Comandos click
 ```
+
+## Licencia
+
+MIT — ver [LICENSE](LICENSE).

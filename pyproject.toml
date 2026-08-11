@@ -9,7 +9,13 @@ description = "CLI para controlar ratones y periféricos compatibles con libratb
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "Tu nombre" }]
+authors = [{ name = "andres2002002" }]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+]
 dependencies = [
     "click>=8.1",
     "dbus-python>=1.3",
