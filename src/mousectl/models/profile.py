@@ -4,16 +4,16 @@ from mousectl.dbus.constants import IFACE_PROFILE
 from mousectl.dbus.object import RatbagObject
 from mousectl.dbus.protocol import RatbagBusLike
 from mousectl.exceptions import MousectlError
+from mousectl.models.base_model import BaseModel
 from mousectl.models.button import Button
 from mousectl.models.led import Led
 from mousectl.models.resolution import Resolution
-from mousectl.models.config.profile_config import ProfileConfig
-from mousectl.models.base_model import BaseModel
+from mousectl.models.schemas.profile_schema import ProfileSchema
 
 _ALL_SCOPES = {"resolutions", "buttons", "leds"}
 
 
-class Profile(RatbagObject, BaseModel):
+class Profile(RatbagObject, BaseModel[ProfileSchema]):
     """Perfil configurable de un dispositivo (resoluciones, botones, leds)."""
 
     interface_name = IFACE_PROFILE
@@ -55,7 +55,7 @@ class Profile(RatbagObject, BaseModel):
     @property
     def leds(self) -> list[Led]:
         return [Led(self.bus, path) for path in self._get("Leds")]
-    
+
     def set_name(self, name: str) -> None:
         self._set("Name", name)
 
@@ -65,12 +65,12 @@ class Profile(RatbagObject, BaseModel):
     def set_enabled(self, enabled: bool) -> None:
         self._set("IsEnabled", enabled)
 
-    def snapshot(self, only: set[str] | None = None) -> ProfileConfig:
+    def snapshot(self, only: set[str] | None = None) -> ProfileSchema:
         """Captura el estado actual. `only` restringe qué se incluye
         (subconjunto de {"resolutions", "buttons", "leds"}); por defecto,
         todo."""
         include = only if only is not None else _ALL_SCOPES
-        return ProfileConfig(
+        return ProfileSchema(
             resolutions=(
                 [r.snapshot() for r in self.resolutions] if "resolutions" in include else None
             ),
@@ -78,7 +78,7 @@ class Profile(RatbagObject, BaseModel):
             leds=([led.snapshot() for led in self.leds] if "leds" in include else None),
         )
 
-    def apply(self, config: ProfileConfig) -> None:
+    def apply(self, config: ProfileSchema) -> None:
         """Aplica un `ProfileConfig` sobre este perfil. Solo toca los campos
         presentes en `config` (los que sean `None` se dejan intactos).
 
@@ -110,12 +110,10 @@ class Profile(RatbagObject, BaseModel):
             targets_l = self.leds
             if len(targets_l) != len(config.leds):
                 raise MousectlError(
-                    f"El perfil tiene {len(targets_l)} leds pero el config trae "
-                    f"{len(config.leds)}."
+                    f"El perfil tiene {len(targets_l)} leds pero el config trae {len(config.leds)}."
                 )
             for led, led_config in zip(targets_l, config.leds, strict=True):
                 led.apply(led_config)
-
 
     def __repr__(self) -> str:
         return (

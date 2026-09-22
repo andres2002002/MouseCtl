@@ -4,12 +4,12 @@ from mousectl.dbus.constants import IFACE_RESOLUTION
 from mousectl.dbus.object import RatbagObject
 from mousectl.dbus.protocol import RatbagBusLike
 from mousectl.exceptions import InvalidValueError
-
 from mousectl.models.base_model import BaseModel
-from mousectl.models.schemas.resolution_schemas import Dpi
-from mousectl.models.config.resolution_config import ResolutionConfig
+from mousectl.models.schemas.resolution_schema import ResolutionSchema
+from mousectl.models.types.resolution_types import Dpi
 
-class Resolution(RatbagObject, BaseModel):
+
+class Resolution(RatbagObject, BaseModel[ResolutionSchema]):
     """Preset de resolución (DPI) de un perfil."""
 
     interface_name = IFACE_RESOLUTION
@@ -38,7 +38,6 @@ class Resolution(RatbagObject, BaseModel):
         value = int(raw)
         return Dpi(x=value, y=value)
 
-
     @property
     def resolutions(self) -> list[Dpi]:
         return [Dpi(x=int(x), y=int(y)) for x, y in self._get("Resolutions")]
@@ -63,12 +62,12 @@ class Resolution(RatbagObject, BaseModel):
 
     def set_default(self) -> None:
         self._call("SetDefault")
-    
-    def snapshot(self) -> ResolutionConfig:
-        dpi = self.resolution
-        return ResolutionConfig(x=dpi.x, y=dpi.y)
 
-    def apply(self, config: ResolutionConfig) -> None:
+    def snapshot(self) -> ResolutionSchema:
+        dpi = self.resolution
+        return ResolutionSchema(x=dpi.x, y=dpi.y)
+
+    def apply(self, config: ResolutionSchema) -> None:
         self.set_resolution(config.x, config.y)
 
     def __repr__(self) -> str:

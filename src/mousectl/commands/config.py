@@ -5,9 +5,9 @@ from pathlib import Path
 
 import click
 
-from mousectl.models.config.device_config import DeviceConfig
-from .common import resolve_device
+from mousectl.models.schemas.device_schema import DeviceSchema
 
+from .common import resolve_device
 
 _SAVE_SCOPES = {"resolutions", "buttons", "leds"}
 
@@ -62,7 +62,7 @@ def load(ctx: click.Context, path: Path, commit: bool) -> None:
     device = resolve_device(ctx)
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-        config = DeviceConfig.from_dict(data)
+        config = DeviceSchema.from_dict(data)
     except (json.JSONDecodeError, KeyError, ValueError) as error:
         raise click.ClickException(
             f"No se pudo leer '{path}' como configuración de mousectl: {error}"

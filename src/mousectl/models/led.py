@@ -4,11 +4,12 @@ from mousectl.dbus.constants import IFACE_LED
 from mousectl.dbus.object import RatbagObject
 from mousectl.dbus.protocol import RatbagBusLike
 from mousectl.exceptions import InvalidLedModeError, InvalidValueError
-from mousectl.models.schemas.led_schemas import Color, LedMode
 from mousectl.models.base_model import BaseModel
-from mousectl.models.config.led_config import LedConfig
+from mousectl.models.schemas.led_schema import LedSchema
+from mousectl.models.types.led_types import Color, LedMode
 
-class Led(RatbagObject, BaseModel):
+
+class Led(RatbagObject, BaseModel[LedSchema]):
     """LED de un perfil (color, modo, brillo, duración del efecto)."""
 
     interface_name = IFACE_LED
@@ -66,30 +67,27 @@ class Led(RatbagObject, BaseModel):
 
     def set_brightness(self, brightness: int) -> None:
         if not 0 <= brightness <= 255:
-            raise InvalidValueError(
-                f"El brillo debe estar entre 0 y 255, recibido {brightness}."
-            )
+            raise InvalidValueError(f"El brillo debe estar entre 0 y 255, recibido {brightness}.")
         self._set("Brightness", self.bus.make_uint32(brightness))
 
     def set_effect_duration(self, milliseconds: int) -> None:
         if milliseconds < 0:
             raise InvalidValueError("La duración del efecto no puede ser negativa.")
         self._set("EffectDuration", self.bus.make_uint32(milliseconds))
-    
-    def snapshot(self) -> LedConfig:
-        return LedConfig(
+
+    def snapshot(self) -> LedSchema:
+        return LedSchema(
             mode=self.mode,
             color=self.color,
             brightness=self.brightness,
             effect_duration=self.effect_duration,
         )
 
-    def apply(self, config: LedConfig) -> None:
+    def apply(self, config: LedSchema) -> None:
         self.set_mode(config.mode)
         self.set_color(config.color)
         self.set_brightness(config.brightness)
         self.set_effect_duration(config.effect_duration)
-
 
     def __repr__(self) -> str:
         return f"Led(index={self.index}, mode={self.mode.name}, color={self.color})"

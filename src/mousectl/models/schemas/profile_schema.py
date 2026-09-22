@@ -1,13 +1,14 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from mousectl.models.config.button_config import ButtonConfig
-from mousectl.models.config.resolution_config import ResolutionConfig
-from mousectl.models.config.led_config import LedConfig
-from mousectl.models.base_model import BaseConfig
+from mousectl.models.base_model import BaseSchema
+from mousectl.models.schemas.button_schema import ButtonSchema
+from mousectl.models.schemas.led_schema import LedSchema
+from mousectl.models.schemas.resolution_schema import ResolutionSchema
+
 
 @dataclass(frozen=True, slots=True)
-class ProfileConfig(BaseConfig):
+class ProfileSchema(BaseSchema):
     """Snapshot parcial o completo de un perfil.
 
     Cada campo es opcional: `None` significa "no incluido" — ni en el JSON
@@ -16,9 +17,9 @@ class ProfileConfig(BaseConfig):
     en `save`/`load`.
     """
 
-    resolutions: list[ResolutionConfig] | None = field(default=None)
-    buttons: list[ButtonConfig] | None = field(default=None)
-    leds: list[LedConfig] | None = field(default=None)
+    resolutions: list[ResolutionSchema] | None = field(default=None)
+    buttons: list[ButtonSchema] | None = field(default=None)
+    leds: list[LedSchema] | None = field(default=None)
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
@@ -31,15 +32,15 @@ class ProfileConfig(BaseConfig):
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ProfileConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "ProfileSchema":
         return cls(
             resolutions=(
-                [ResolutionConfig.from_dict(r) for r in data["resolutions"]]
+                [ResolutionSchema.from_dict(r) for r in data["resolutions"]]
                 if "resolutions" in data
                 else None
             ),
             buttons=(
-                [ButtonConfig.from_dict(b) for b in data["buttons"]] if "buttons" in data else None
+                [ButtonSchema.from_dict(b) for b in data["buttons"]] if "buttons" in data else None
             ),
-            leds=([LedConfig.from_dict(led) for led in data["leds"]] if "leds" in data else None),
+            leds=([LedSchema.from_dict(led) for led in data["leds"]] if "leds" in data else None),
         )

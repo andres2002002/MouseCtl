@@ -3,10 +3,15 @@ from __future__ import annotations
 from mousectl.dbus.constants import IFACE_DEVICE, IFACE_MANAGER, ROOT_PATH
 from mousectl.dbus.object import RatbagObject
 from mousectl.dbus.protocol import RatbagBusLike
-from mousectl.exceptions import DeviceNotFoundError, InvalidValueError, NoActiveProfileError, NoDevicesFoundError
-from mousectl.models.profile import Profile
+from mousectl.exceptions import (
+    DeviceNotFoundError,
+    InvalidValueError,
+    NoActiveProfileError,
+    NoDevicesFoundError,
+)
 from mousectl.models.base_model import BaseModel
-from mousectl.models.config.device_config import DeviceConfig
+from mousectl.models.profile import Profile
+from mousectl.models.schemas.device_schema import DeviceSchema
 
 
 class Device(RatbagObject, BaseModel):
@@ -44,17 +49,16 @@ class Device(RatbagObject, BaseModel):
     def commit(self) -> None:
         self._call("Commit")
 
-
     def snapshot(
         self, profile_indices: set[int] | None = None, only: set[str] | None = None
-    ) -> DeviceConfig:
+    ) -> DeviceSchema:
         """Captura el estado de uno o varios perfiles. `profile_indices=None`
         captura todos; `only` se pasa tal cual a `Profile.snapshot`."""
         profiles = self.profiles
         selected = [p for p in profiles if profile_indices is None or p.index in profile_indices]
-        return DeviceConfig(profiles={p.index: p.snapshot(only=only) for p in selected})
+        return DeviceSchema(profiles={p.index: p.snapshot(only=only) for p in selected})
 
-    def apply(self, config: DeviceConfig) -> None:
+    def apply(self, config: DeviceSchema) -> None:
         """Aplica un `DeviceConfig` — cada entrada se aplica al perfil con
         ese índice. Falla explícito si un índice del config no existe en
         este dispositivo (ej. config guardado de un dispositivo con más
@@ -66,7 +70,6 @@ class Device(RatbagObject, BaseModel):
                     f"El config trae el perfil {index}, pero este dispositivo no lo tiene."
                 )
             by_index[index].apply(profile_config)
-
 
     def __repr__(self) -> str:
         return f"Device(name='{self.name}', model='{self.model}', path='{self.path}')"

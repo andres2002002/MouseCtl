@@ -1,33 +1,36 @@
 from __future__ import annotations
-from typing import Any
+
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 
-class BaseConfig(ABC):
-    """Configuración serializable de un modelo ratbag."""
+class BaseSchema(ABC):
+    """Schema base para modelos ratbag."""
 
     @abstractmethod
     def to_dict(self) -> dict[str, Any]:
-        """Convierte la configuración a un diccionario."""
+        """Convierte el objeto a un diccionario."""
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def from_dict(cls, data: dict[str, Any]) -> "BaseConfig":
-        """Crea una configuración a partir de un diccionario."""
+    def from_dict(cls, data: dict[str, Any]) -> BaseSchema:
+        """Crea un schema a partir de un diccionario."""
         raise NotImplementedError
 
 
-class BaseModel(ABC):
-    """Interfaz para modelos que pueden guardar y aplicar configuración."""
+SchemaT = TypeVar("SchemaT", bound=BaseSchema)
+
+
+class BaseModel(ABC, Generic[SchemaT]):
+    """Interfaz genérica para modelos respaldados por una configuración especifica."""
 
     @abstractmethod
-    def snapshot(self) -> BaseConfig:
-        """Crea una copia inmutable del estado actual."""
+    def snapshot(self) -> SchemaT:
+        """Obtiene una configuración del estado actual."""
         raise NotImplementedError
 
     @abstractmethod
-    def apply(self, target: BaseConfig) -> None:
-        """Aplica una configuración al objeto."""
+    def apply(self, config: SchemaT) -> None:
+        """Aplica una configuración al modelo."""
         raise NotImplementedError

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from mousectl.exceptions import MousectlError
-from mousectl.models.config.profile_config import ProfileConfig
+from mousectl.models.schemas.profile_schema import ProfileSchema
 
 _PRESET_NAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 
@@ -17,7 +17,7 @@ class Preset:
     """Preset virtual de MouseCtl almacenado en el sistema."""
 
     name: str
-    config: ProfileConfig
+    config: ProfileSchema
 
     @classmethod
     def directory(cls) -> Path:
@@ -66,7 +66,7 @@ class Preset:
 
         try:
             data: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
-            config = ProfileConfig.from_dict(data)
+            config = ProfileSchema.from_dict(data)
         except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
             raise MousectlError(f"No se pudo cargar el preset '{name}': {error}") from error
 

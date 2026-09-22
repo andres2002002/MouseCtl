@@ -6,12 +6,17 @@ from mousectl.dbus.constants import IFACE_BUTTON
 from mousectl.dbus.object import RatbagObject
 from mousectl.dbus.protocol import RatbagBusLike
 from mousectl.exceptions import InvalidValueError, WrongActionTypeError
-
-from mousectl.models.schemas.buttons_schemas import ActionType, MacroEvent, MacroEventType, SpecialFunction
 from mousectl.models.base_model import BaseModel
-from mousectl.models.config.button_config import ButtonConfig
+from mousectl.models.schemas.button_schema import ButtonSchema
+from mousectl.models.types.buttons_types import (
+    ActionType,
+    MacroEvent,
+    MacroEventType,
+    SpecialFunction,
+)
 
-class Button(RatbagObject, BaseModel):
+
+class Button(RatbagObject, BaseModel[ButtonSchema]):
     """Botón físico de un perfil.
 
     La propiedad `Mapping` es `(uv)`: primer elemento `ActionType`, segundo
@@ -123,18 +128,18 @@ class Button(RatbagObject, BaseModel):
     def disable(self) -> None:
         self._call("Disable")
 
-    def snapshot(self) -> ButtonConfig:
+    def snapshot(self) -> ButtonSchema:
         action_type = self.action_type
         if action_type is ActionType.BUTTON:
-            return ButtonConfig(action_type=action_type, button_target=self.button_mapping)
+            return ButtonSchema(action_type=action_type, button_target=self.button_mapping)
         if action_type is ActionType.SPECIAL:
-            return ButtonConfig(action_type=action_type, special=self.special_function)
+            return ButtonSchema(action_type=action_type, special=self.special_function)
         if action_type is ActionType.MACRO:
-            return ButtonConfig(action_type=action_type, macro=self.macro)
+            return ButtonSchema(action_type=action_type, macro=self.macro)
         # NONE (deshabilitado) / KEY / UNKNOWN: sin payload que capturar todavía.
-        return ButtonConfig(action_type=action_type)
+        return ButtonSchema(action_type=action_type)
 
-    def apply(self, config: ButtonConfig) -> None:
+    def apply(self, config: ButtonSchema) -> None:
         if config.action_type is ActionType.BUTTON:
             if config.button_target is None:
                 raise InvalidValueError("ButtonConfig de tipo BUTTON sin 'button_target'.")
@@ -154,7 +159,6 @@ class Button(RatbagObject, BaseModel):
                 f"No se puede aplicar un ButtonConfig con action_type={config.action_type.name} "
                 "todavía (KEY/UNKNOWN no están soportados para escritura)."
             )
-
 
     def __repr__(self) -> str:
         return f"Button(index={self.index}, action_type={self.action_type.name})"

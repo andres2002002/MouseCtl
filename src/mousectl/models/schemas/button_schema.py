@@ -1,11 +1,17 @@
-
 from dataclasses import dataclass
 from typing import Any
-from mousectl.models.schemas.buttons_schemas import ActionType, MacroEvent, MacroEventType, SpecialFunction
-from mousectl.models.base_model import BaseConfig
+
+from mousectl.models.base_model import BaseSchema
+from mousectl.models.types.buttons_types import (
+    ActionType,
+    MacroEvent,
+    MacroEventType,
+    SpecialFunction,
+)
+
 
 @dataclass(frozen=True, slots=True)
-class ButtonConfig(BaseConfig):
+class ButtonSchema(BaseSchema):
     """Snapshot del mapeo de un botón. Solo uno de `button_target`/`special`/
     `macro` es relevante según `action_type`; los demás quedan en `None`."""
 
@@ -27,7 +33,7 @@ class ButtonConfig(BaseConfig):
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ButtonConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "ButtonSchema":
         macro = None
         if "macro" in data:
             macro = [
