@@ -3,7 +3,7 @@ from __future__ import annotations
 import click
 
 from mousectl.commons import resolve_device
-from mousectl.models.preset import Preset
+from mousectl.models.virtual_profile import Preset
 
 
 @click.group("preset")

@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import click
 
-from mousectl.commons import HELP_SETTINGS, resolve_device
+from mousectl.commons import HELP_SETTINGS, resolve_device, resolve_profile
+from mousectl.config.config import ConfigStore
 from mousectl.models.device import Device
 from mousectl.models.profile import Profile
+from mousectl.models.schemas import ProfileSchema
 
 
 @click.group("profile", context_settings=HELP_SETTINGS)
@@ -46,6 +51,110 @@ def profile_get(ctx: click.Context, index: int | None) -> None:
     click.echo(f"Perfil {profile.index}: {profile.name or 'sin nombre'}")
 
 
+@profile_group.command("save")
+@click.argument(
+    "path",
+    required=False,
+    type=click.Path(dir_okay=False, writable=True, path_type=Path),
+)
+@click.pass_context
+def profile_save(ctx: click.Context, path: Path | None) -> None:
+    """Guarda el perfil seleccionado."""
+    profile = resolve_profile(ctx)
+
+    if path is None:
+        config = ConfigStore().load_config()
+        path = config.profiles_dir / f"profile-{profile.index}.json"
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    profile_config = profile.snapshot()
+
+    path.write_text(
+        json.dumps(
+            profile_config.to_dict(),
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    click.echo(f"Perfil {profile.index} guardado en {path}.")
+
+
+@profile_group.command("load")
+@click.argument(
+    "path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)
+@click.option(
+    "--apply",
+    is_flag=True,
+    help="Aplica la configuración al perfil integrado seleccionado.",
+)
+@click.option(
+    "--output",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Guarda la configuración cargada en otro archivo.",
+)
+@click.option(
+    "--profile",
+    "virtual_profile",
+    type=str,
+    help="Reemplaza el VirtualProfile indicado.",
+)
+@click.pass_context
+def profile_load(
+    ctx: click.Context,
+    path: Path,
+    apply: bool,
+    output: Path | None,
+    virtual_profile: str | None,
+) -> None:
+    """Carga una configuración y la dirige a un destino."""
+    destinations = int(apply) + int(output is not None) + int(virtual_profile is not None)
+
+    if destinations != 1:
+        raise click.UsageError(
+            "Debes especificar exactamente uno de: --apply, --output PATH o --profile NAME."
+        )
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        config = ProfileSchema.from_dict(data)
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+        raise click.ClickException(
+            f"No se pudo leer '{path}' como configuración de perfil: {error}"
+        ) from error
+
+    if apply:
+        profile = resolve_profile(ctx)
+        profile.apply(config)
+
+        click.echo(f"Configuración de '{path}' aplicada al perfil {profile.index}.")
+        return
+
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
+        output.write_text(
+            json.dumps(
+                config.to_dict(),
+                indent=2,
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        click.echo(f"Configuración de '{path}' guardada en '{output}'.")
+        return
+
+    # VirtualProfile todavía no está implementado.
+    raise click.ClickException(f"VirtualProfile '{virtual_profile}' todavía no está implementado.")
+
+
 @profile_group.command("list")
 @click.pass_context
 def profile_list(ctx: click.Context) -> None:
@@ -69,7 +178,7 @@ def profile_select(ctx: click.Context, selector: str) -> None:
     try:
         profile_index = int(selector)
     except ValueError:
-        raise click.ClickException(
+        raise click.ClickException(  # noqa: B904
             "Los perfiles integrados deben seleccionarse mediante su índice."
         )
 
