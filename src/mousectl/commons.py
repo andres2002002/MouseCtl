@@ -6,6 +6,10 @@ from mousectl.dbus.bus import RatbagBus
 from mousectl.exceptions import MultipleDevicesFoundError
 from mousectl.models.device import Device
 
+HELP_SETTINGS = {
+    "help_option_names": ["-h", "--help"],
+}
+
 
 def resolve_device(ctx: click.Context) -> Device:
     """Resuelve el dispositivo para el comando actual."""

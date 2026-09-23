@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import click
 
+from mousectl.commons import HELP_SETTINGS, resolve_device
 from mousectl.models.button import ActionType, Button, MacroEvent, MacroEventType, SpecialFunction
 from mousectl.models.keycodes import KeyCode
-from .common import resolve_device
-
 
 _MACRO_EVENT_ALIASES = {
     "press": MacroEventType.KEY_PRESSED,
@@ -92,7 +91,7 @@ def _parse_macro_sequence(sequence: str) -> list[MacroEvent]:
     return events
 
 
-@click.group("button")
+@click.group("button", context_settings=HELP_SETTINGS)
 def button_group() -> None:
     """Controla las acciones de los botones del perfil activo."""
 

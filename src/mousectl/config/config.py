@@ -61,10 +61,12 @@ class Config:
         profiles_dir = data.get("profiles_dir")
         if profiles_dir is None:
             profiles_dir = default.profiles_dir
+        else:
+            profiles_dir = Path(profiles_dir).expanduser()
 
         return cls(
             config_dir=default.config_dir,
-            profiles_dir=Path(profiles_dir),
+            profiles_dir=profiles_dir,
         )
 
 

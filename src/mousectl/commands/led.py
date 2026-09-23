@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import click
 
+from mousectl.commons import HELP_SETTINGS, resolve_device
 from mousectl.models.led import Color, LedMode
-from .common import resolve_device
 
 
-@click.group("led")
+@click.group("led", context_settings=HELP_SETTINGS)
 def led_group() -> None:
     """Controla los LEDs del perfil activo."""
 
@@ -28,7 +28,9 @@ def led_list(ctx: click.Context) -> None:
 
 @led_group.command("color")
 @click.argument("color", type=str)
-@click.option("--index", "-i", "led_index", default=0, show_default=True, help="Índice del LED a modificar.")
+@click.option(
+    "--index", "-i", "led_index", default=0, show_default=True, help="Índice del LED a modificar."
+)
 @click.option("--commit/--no-commit", default=True)
 @click.pass_context
 def led_color(ctx: click.Context, color: str, led_index: int, commit: bool) -> None:

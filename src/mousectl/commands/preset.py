@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import click
 
+from mousectl.commons import resolve_device
 from mousectl.models.preset import Preset
-from .common import resolve_device
 
 
 @click.group("preset")

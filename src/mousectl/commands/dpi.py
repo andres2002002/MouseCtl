@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import click
 
-from .common import resolve_device
+from mousectl.commons import HELP_SETTINGS, resolve_device
 
 
-@click.group("dpi")
+@click.group("dpi", context_settings=HELP_SETTINGS)
 def dpi_group() -> None:
     """Controla los presets de resolución (DPI) del perfil activo."""
 

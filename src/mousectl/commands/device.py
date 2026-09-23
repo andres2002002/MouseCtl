@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import click
 
+from mousectl.commons import HELP_SETTINGS, resolve_device
 from mousectl.models.device import Device
 
-from .common import resolve_device
 
-
-@click.group("device")
+@click.group("device", context_settings=HELP_SETTINGS)
 def device_group() -> None:
     """Gestiona los dispositivos ratbag detectados."""
 

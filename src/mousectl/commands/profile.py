@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import click
 
+from mousectl.commons import HELP_SETTINGS, resolve_device
 from mousectl.models.device import Device
 from mousectl.models.profile import Profile
 
-from .common import resolve_device
 
-
-@click.group("profile")
+@click.group("profile", context_settings=HELP_SETTINGS)
 def profile_group() -> None:
     """Gestiona los perfiles del dispositivo."""
 
