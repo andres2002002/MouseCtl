@@ -12,6 +12,7 @@ from mousectl.commands.dpi import dpi_group
 from mousectl.commands.led import led_group
 from mousectl.commands.preset import preset_group
 from mousectl.commands.profile import profile_group
+from mousectl.config import ConfigStore
 from mousectl.dbus.bus import RatbagBus
 from mousectl.exceptions import MousectlError
 
@@ -32,8 +33,14 @@ from mousectl.exceptions import MousectlError
 def main(ctx: click.Context, device_name: str | None) -> None:
     """CLI para controlar ratones y periféricos compatibles con libratbag (ratbagd)."""
     ctx.ensure_object(dict)
+
+    config_store = ConfigStore()
+    session = config_store.session_store.load()
+
     ctx.obj["bus"] = RatbagBus()
     ctx.obj["device_name"] = device_name
+    ctx.obj["session"] = session
+    ctx.obj["session_store"] = config_store.session_store
 
 
 main.add_command(device_group)

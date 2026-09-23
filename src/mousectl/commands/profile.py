@@ -4,6 +4,7 @@ import click
 
 from mousectl.models.device import Device
 from mousectl.models.profile import Profile
+
 from .common import resolve_device
 
 
@@ -56,9 +57,36 @@ def profile_list(ctx: click.Context) -> None:
         click.echo(f"[{marker}] {profile.index}: {profile.name or 'sin nombre'}")
 
 
+@profile_group.command("select")
+@click.argument("selector")
+@click.pass_context
+def profile_select(ctx: click.Context, selector: str) -> None:
+    """Selecciona un perfil para los siguientes comandos."""
+    session = ctx.obj["session"]
+    session_store = ctx.obj["session_store"]
+
+    device = resolve_device(ctx)
+
+    try:
+        profile_index = int(selector)
+    except ValueError:
+        raise click.ClickException(
+            "Los perfiles integrados deben seleccionarse mediante su índice."
+        )
+
+    _get_profile(device, profile_index)
+
+    session.profile = profile_index
+    session_store.save(session)
+
+    click.echo(f"Perfil seleccionado: {profile_index} (dispositivo: {device.name})")
+
+
 @profile_group.command("switch")
 @click.argument("index", type=int)
-@click.option("--commit/--no-commit", default=True, help="Aplica el cambio inmediatamente en el hardware.")
+@click.option(
+    "--commit/--no-commit", default=True, help="Aplica el cambio inmediatamente en el hardware."
+)
 @click.pass_context
 def profile_switch(ctx: click.Context, index: int, commit: bool) -> None:
     """Activa el perfil con el índice INDEX."""

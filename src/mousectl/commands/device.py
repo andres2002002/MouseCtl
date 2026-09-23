@@ -3,6 +3,7 @@ from __future__ import annotations
 import click
 
 from mousectl.models.device import Device
+
 from .common import resolve_device
 
 
@@ -18,6 +19,25 @@ def device_list(ctx: click.Context) -> None:
     bus = ctx.obj["bus"]
     for device in Device.list_all(bus):
         click.echo(f"{device.name} ({device.model}) -> {device.path}")
+
+
+@device_group.command("select")
+@click.argument("name")
+@click.pass_context
+def device_select(ctx: click.Context, name: str) -> None:
+    """Selecciona un dispositivo para los siguientes comandos."""
+    bus = ctx.obj["bus"]
+    session = ctx.obj["session"]
+    session_store = ctx.obj["session_store"]
+
+    device = Device.find(bus, name)
+
+    session.device = device.name
+    session.profile = None
+
+    session_store.save(session)
+
+    click.echo(f"Dispositivo seleccionado: {device.name}")
 
 
 @device_group.command("status")
