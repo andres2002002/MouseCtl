@@ -42,7 +42,7 @@ def device_select(ctx: click.Context, name: str) -> None:
 @device_group.command("status")
 @click.pass_context
 def device_status(ctx: click.Context) -> None:
-    """Muestra el estado actual del dispositivo: perfil, dpi y leds."""
+    """Muestra el estado actual del dispositivo y su perfil integrado activo."""
     device = resolve_device(ctx)
     profile = device.active_profile
 
