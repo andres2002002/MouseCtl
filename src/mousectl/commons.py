@@ -41,20 +41,24 @@ def resolve_device(ctx: click.Context) -> Device:
 
 
 def resolve_profile(ctx: click.Context) -> Profile:
-    """Resuelve el perfil seleccionado por la sesión actual."""
+    """Resuelve el perfil seleccionado, que debe ser integrado."""
     device = resolve_device(ctx)
-    profile_index = ctx.obj["session"].profile
+    profile_selector = ctx.obj["session"].profile
 
-    if profile_index is None:
+    if profile_selector is None:
         raise click.ClickException(
-            "No hay un perfil seleccionado. Usa 'mousectl profile select <índice>'."
+            "No hay un perfil seleccionado. Usa 'mousectl profile select <índice o nombre>'."
         )
 
-    if not isinstance(profile_index, int):
-        raise click.ClickException("El perfil seleccionado no es un perfil integrado válido.")
+    if isinstance(profile_selector, str):
+        raise click.ClickException(
+            f"El perfil seleccionado es el perfil virtual "
+            f"'{profile_selector}'. "
+            "Este comando requiere un perfil integrado."
+        )
 
     for profile in device.profiles:
-        if profile.index == profile_index:
+        if profile.index == profile_selector:
             return profile
 
-    raise click.ClickException(f"No existe el perfil seleccionado: {profile_index}.")
+    raise click.ClickException(f"No existe el perfil integrado seleccionado: {profile_selector}.")

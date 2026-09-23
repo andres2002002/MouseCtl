@@ -6,11 +6,10 @@ import click
 
 from mousectl import __version__
 from mousectl.commands.button import button_group
-from mousectl.commands.config import config_group, load, save
+from mousectl.commands.config import config_group
 from mousectl.commands.device import device_group
 from mousectl.commands.dpi import dpi_group
 from mousectl.commands.led import led_group
-from mousectl.commands.preset import preset_group
 from mousectl.commands.profile import profile_group
 from mousectl.commons import HELP_SETTINGS
 from mousectl.config import ConfigStore
@@ -46,13 +45,10 @@ def main(ctx: click.Context, device_name: str | None) -> None:
 
 main.add_command(device_group)
 main.add_command(profile_group)
-main.add_command(preset_group)
 main.add_command(led_group)
 main.add_command(dpi_group)
 main.add_command(button_group)
 main.add_command(config_group)
-main.add_command(save)
-main.add_command(load)
 
 
 def run() -> None:
