@@ -370,7 +370,7 @@ def profile_switch(
     ctx: click.Context,
     selector: str,
     commit: bool,
-    selected: bool,
+    select: bool,
 ) -> None:
     """
     Cambia la configuración que está utilizando actualmente el dispositivo.
@@ -391,7 +391,7 @@ def profile_switch(
 
         active_profile.apply(virtual_profile.config)
 
-        if selected:
+        if select:
             session.profile = virtual_profile.name
             session_store.save(session)
 
@@ -407,7 +407,7 @@ def profile_switch(
     profile = _get_profile(device, profile_index)
     profile.set_active()
 
-    if selected:
+    if select:
         session.profile = profile.index
         session_store.save(session)
 

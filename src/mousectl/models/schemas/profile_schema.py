@@ -17,12 +17,15 @@ class ProfileSchema(BaseSchema):
     en `save`/`load`.
     """
 
+    active_resolution: ResolutionSchema | None = field(default=None)
     resolutions: list[ResolutionSchema] | None = field(default=None)
     buttons: list[ButtonSchema] | None = field(default=None)
     leds: list[LedSchema] | None = field(default=None)
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {}
+        if self.active_resolution is not None:
+            data["active_resolution"] = self.active_resolution.to_dict()
         if self.resolutions is not None:
             data["resolutions"] = [r.to_dict() for r in self.resolutions]
         if self.buttons is not None:
@@ -34,6 +37,11 @@ class ProfileSchema(BaseSchema):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ProfileSchema":
         return cls(
+            active_resolution=(
+                ResolutionSchema.from_dict(data["active_resolution"])
+                if "active_resolution" in data
+                else None
+            ),
             resolutions=(
                 [ResolutionSchema.from_dict(r) for r in data["resolutions"]]
                 if "resolutions" in data

@@ -260,7 +260,14 @@ def button_set(
     macro: str | None,
     commit: bool,
 ) -> None:
-    """Cambia la acción de un botón del perfil seleccionado."""
+    """
+    Cambia la acción de un botón del perfil seleccionado.
+
+    Ejemplos de uso:
+       mousectl button set 0 --button 1
+       mousectl button set 1 --special doubleclick
+       mousectl button set 2 --macro 'press:a,release:a'
+    """
     profile = _resolve_selected_profile(ctx)
 
     if isinstance(profile, VirtualProfile):

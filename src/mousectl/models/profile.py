@@ -10,7 +10,7 @@ from mousectl.models.led import Led
 from mousectl.models.resolution import Resolution
 from mousectl.models.schemas.profile_schema import ProfileSchema
 
-_ALL_SCOPES = {"resolutions", "buttons", "leds"}
+_ALL_SCOPES = {"active_resolution", "resolutions", "buttons", "leds"}
 
 
 class Profile(RatbagObject, BaseModel[ProfileSchema]):
@@ -71,6 +71,9 @@ class Profile(RatbagObject, BaseModel[ProfileSchema]):
         todo."""
         include = only if only is not None else _ALL_SCOPES
         return ProfileSchema(
+            active_resolution=(
+                self.active_resolution.snapshot() if "active_resolution" in include else None
+            ),
             resolutions=(
                 [r.snapshot() for r in self.resolutions] if "resolutions" in include else None
             ),
@@ -95,6 +98,10 @@ class Profile(RatbagObject, BaseModel[ProfileSchema]):
                 )
             for resolution, res_config in zip(targets, config.resolutions, strict=True):
                 resolution.apply(res_config)
+
+        # First Apply resolutions then apply active resolution,
+        if config.active_resolution is not None:
+            self.active_resolution.apply(config.active_resolution)
 
         if config.buttons is not None:
             targets_b = self.buttons
