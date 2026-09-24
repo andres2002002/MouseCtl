@@ -133,7 +133,8 @@ def profile_save(
     output: Path | None,
     virtual_profile: str | None,
 ) -> None:
-    """Guarda el perfil seleccionado como archivo o perfil virtual.
+    """
+    Guarda el perfil seleccionado como archivo o perfil virtual.
 
     El perfil seleccionado puede ser integrado o virtual.
 
@@ -245,16 +246,28 @@ def profile_load(
         ) from error
 
     if apply:
-        profile = resolve_profile(ctx)
+        device = resolve_device(ctx)
+        session_profile = ctx.obj["session"].profile
 
-        if isinstance(ctx.obj["session"].profile, str):
+        if session_profile is None:
             raise click.ClickException(
-                "No se puede aplicar una configuración directamente "
-                "sobre un perfil virtual. Selecciona un perfil integrado."
+                "No hay un perfil seleccionado. Usa 'mousectl profile select <índice o nombre>'."
+            )
+
+        if isinstance(session_profile, int):
+            profile = resolve_profile(ctx)
+        else:
+            profile = device.active_profile
+            click.echo(
+                f"Advertencia: el perfil seleccionado es virtual "
+                f"'{session_profile}'. "
+                f"La configuración se aplicará sobre el perfil integrado "
+                f"activo {profile.index}."
             )
 
         profile.apply(profile_schema)
-
+        # El commit es para que los cambios se apliquen en ese momento
+        device.commit()
         click.echo(f"Configuración de '{path}' aplicada al perfil {profile.index}.")
         return
 
@@ -313,10 +326,13 @@ def profile_list(ctx: click.Context) -> None:
 @click.argument("selector")
 @click.pass_context
 def profile_select(ctx: click.Context, selector: str) -> None:
-    """Selecciona un perfil para las operaciones posteriores sin modificar el dispositivo.
+    """
+    Selecciona un perfil para las operaciones posteriores sin modificar el dispositivo.
+    Esta accion solo guarda la selección en la sesión para las acciones posteriores.
 
     Un índice selecciona un perfil integrado y un nombre selecciona un perfil virtual.
-    La selección se conserva entre ejecuciones de MouseCtl."""
+    La selección se conserva entre ejecuciones de MouseCtl.
+    """
     session = ctx.obj["session"]
     session_store = ctx.obj["session_store"]
 
@@ -348,16 +364,23 @@ def profile_select(ctx: click.Context, selector: str) -> None:
     default=True,
     help="Aplica el cambio inmediatamente en el hardware.",
 )
+@click.option("--select/--no-select", default=True, help="Guarda el perfil en la sesion actual.")
 @click.pass_context
 def profile_switch(
     ctx: click.Context,
     selector: str,
     commit: bool,
+    selected: bool,
 ) -> None:
-    """Cambia la configuración que está utilizando actualmente el dispositivo.
+    """
+    Cambia la configuración que está utilizando actualmente el dispositivo.
 
     Un índice activa ese perfil integrado en el hardware.
-    Un nombre carga el perfil virtual indicado sobre el perfil integrado actualmente activo."""
+    Un nombre carga el perfil virtual indicado sobre el perfil integrado actualmente activo.
+    """
+    session = ctx.obj["session"]
+    session_store = ctx.obj["session_store"]
+
     device = resolve_device(ctx)
 
     try:
@@ -367,6 +390,10 @@ def profile_switch(
         active_profile = device.active_profile
 
         active_profile.apply(virtual_profile.config)
+
+        if selected:
+            session.profile = virtual_profile.name
+            session_store.save(session)
 
         if commit:
             device.commit()
@@ -379,6 +406,10 @@ def profile_switch(
 
     profile = _get_profile(device, profile_index)
     profile.set_active()
+
+    if selected:
+        session.profile = profile.index
+        session_store.save(session)
 
     if commit:
         device.commit()
