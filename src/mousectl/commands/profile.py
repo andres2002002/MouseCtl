@@ -364,19 +364,34 @@ def profile_select(ctx: click.Context, selector: str) -> None:
     default=True,
     help="Aplica el cambio inmediatamente en el hardware.",
 )
-@click.option("--select/--no-select", default=True, help="Guarda el perfil en la sesion actual.")
+@click.option(
+    "--select/--no-select",
+    default=True,
+    help="Guarda el perfil en la sesión actual.",
+)
+@click.option(
+    "-i",
+    "--index",
+    type=int,
+    help="Índice del perfil integrado sobre el que se aplicará el perfil virtual.",
+)
 @click.pass_context
 def profile_switch(
     ctx: click.Context,
     selector: str,
     commit: bool,
     select: bool,
+    index: int | None,
 ) -> None:
     """
     Cambia la configuración que está utilizando actualmente el dispositivo.
 
     Un índice activa ese perfil integrado en el hardware.
-    Un nombre carga el perfil virtual indicado sobre el perfil integrado actualmente activo.
+    Un nombre carga el perfil virtual indicado sobre un perfil integrado.
+
+    Para perfiles virtuales, -i/--index permite indicar el perfil integrado
+    sobre el que se aplicará la configuración. Si no se indica, se utiliza
+    el perfil integrado actualmente activo.
     """
     session = ctx.obj["session"]
     session_store = ctx.obj["session_store"]
@@ -386,8 +401,13 @@ def profile_switch(
     try:
         profile_index = int(selector)
     except ValueError:
+        # Perfil virtual
         virtual_profile = VirtualProfile.load(selector)
-        active_profile = device.active_profile
+
+        if index is None:
+            active_profile = device.active_profile
+        else:
+            active_profile = _get_profile(device, index)
 
         active_profile.apply(virtual_profile.config)
 
@@ -403,6 +423,10 @@ def profile_switch(
             f"el perfil integrado {active_profile.index}."
         )
         return
+
+    # Perfil integrado
+    if index is not None:
+        raise click.UsageError("--index solo puede utilizarse al cambiar a un perfil virtual.")
 
     profile = _get_profile(device, profile_index)
     profile.set_active()
