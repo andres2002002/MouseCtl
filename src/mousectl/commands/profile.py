@@ -5,7 +5,12 @@ from pathlib import Path
 
 import click
 
-from mousectl.commons import HELP_SETTINGS, resolve_device, resolve_profile
+from mousectl.commons import (
+    HELP_SETTINGS,
+    resolve_device,
+    resolve_profile,
+    resolve_selected_profile,
+)
 from mousectl.exceptions import MousectlError
 from mousectl.models.device import Device
 from mousectl.models.profile import Profile
@@ -148,7 +153,7 @@ def profile_save(
             "Debes especificar exactamente uno de: --output PATH o --profile NAME."
         )
 
-    profile = _resolve_selected_profile(ctx)
+    profile = resolve_selected_profile(ctx)
 
     if isinstance(profile, VirtualProfile):
         profile_schema = profile.config
@@ -516,20 +521,3 @@ def _resolve_profile_selector(
         return VirtualProfile.load(selector)
 
     return _get_profile(device, index)
-
-
-def _resolve_selected_profile(
-    ctx: click.Context,
-) -> Profile | VirtualProfile:
-    """Resuelve el perfil actualmente seleccionado."""
-    profile_selector = ctx.obj["session"].profile
-
-    if profile_selector is None:
-        raise click.ClickException(
-            "No hay un perfil seleccionado. Usa 'mousectl profile select <índice o nombre>'."
-        )
-
-    if isinstance(profile_selector, int):
-        return resolve_profile(ctx)
-
-    return VirtualProfile.load(profile_selector)

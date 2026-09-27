@@ -6,6 +6,7 @@ from mousectl.dbus.bus import RatbagBus
 from mousectl.exceptions import MultipleDevicesFoundError
 from mousectl.models.device import Device
 from mousectl.models.profile import Profile
+from mousectl.models.virtual_profile import VirtualProfile
 
 HELP_SETTINGS = {
     "help_option_names": ["-h", "--help"],
@@ -62,3 +63,20 @@ def resolve_profile(ctx: click.Context) -> Profile:
             return profile
 
     raise click.ClickException(f"No existe el perfil integrado seleccionado: {profile_selector}.")
+
+
+def resolve_selected_profile(
+    ctx: click.Context,
+) -> Profile | VirtualProfile:
+    """Resuelve el perfil actualmente seleccionado."""
+    profile_selector = ctx.obj["session"].profile
+
+    if profile_selector is None:
+        raise click.ClickException(
+            "No hay un perfil seleccionado. Usa 'mousectl profile select <índice o nombre>'."
+        )
+
+    if isinstance(profile_selector, int):
+        return resolve_profile(ctx)
+
+    return VirtualProfile.load(profile_selector)

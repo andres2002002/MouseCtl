@@ -3,12 +3,14 @@ from __future__ import annotations
 from mousectl.dbus.constants import IFACE_PROFILE
 from mousectl.dbus.object import RatbagObject
 from mousectl.dbus.protocol import RatbagBusLike
-from mousectl.exceptions import MousectlError
+from mousectl.exceptions import InvalidValueError, MousectlError
 from mousectl.models.base_model import BaseModel
 from mousectl.models.button import Button
 from mousectl.models.led import Led
 from mousectl.models.resolution import Resolution
+from mousectl.models.schemas.button_schema import ButtonSchema
 from mousectl.models.schemas.profile_schema import ProfileSchema
+from mousectl.models.schemas.resolution_schema import ResolutionSchema
 
 _ALL_SCOPES = {"active_resolution", "resolutions", "buttons", "leds"}
 
@@ -121,6 +123,35 @@ class Profile(RatbagObject, BaseModel[ProfileSchema]):
                 )
             for led, led_config in zip(targets_l, config.leds, strict=True):
                 led.apply(led_config)
+
+    def apply_buttons(self, buttons: list[ButtonSchema] | None) -> None:
+        if buttons is None:
+            return
+
+        if len(buttons) != len(self.buttons):
+            raise InvalidValueError(
+                f"La configuración contiene {len(buttons)} botones, "
+                f"pero el perfil tiene {len(self.buttons)}."
+            )
+
+        for button, config in zip(self.buttons, buttons, strict=False):
+            button.apply(config)
+
+    def apply_resolutions(
+        self,
+        resolutions: list[ResolutionSchema] | None,
+    ) -> None:
+        if resolutions is None:
+            return
+
+        if len(resolutions) != len(self.resolutions):
+            raise InvalidValueError(
+                f"La configuración contiene {len(resolutions)} resoluciones, "
+                f"pero el perfil tiene {len(self.resolutions)}."
+            )
+
+        for resolution, config in zip(self.resolutions, resolutions, strict=False):
+            resolution.set_resolution(config.x, config.y)
 
     def __repr__(self) -> str:
         return (

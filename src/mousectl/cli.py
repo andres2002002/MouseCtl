@@ -11,6 +11,7 @@ from mousectl.commands.device import device_group
 from mousectl.commands.dpi import dpi_group
 from mousectl.commands.led import led_group
 from mousectl.commands.profile import profile_group
+from mousectl.commands.status import status
 from mousectl.commons import HELP_SETTINGS
 from mousectl.config import ConfigStore
 from mousectl.dbus.bus import RatbagBus
@@ -43,6 +44,7 @@ def main(ctx: click.Context, device_name: str | None) -> None:
     ctx.obj["session_store"] = config_store.session_store
 
 
+main.add_command(status)
 main.add_command(device_group)
 main.add_command(profile_group)
 main.add_command(led_group)

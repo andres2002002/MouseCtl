@@ -5,7 +5,7 @@ import click
 from mousectl.commons import (
     HELP_SETTINGS,
     resolve_device,
-    resolve_profile,
+    resolve_selected_profile,
 )
 from mousectl.models.button import (
     ActionType,
@@ -25,23 +25,6 @@ _MACRO_EVENT_ALIASES = {
     "release": MacroEventType.KEY_RELEASED,
     "wait": MacroEventType.WAIT,
 }
-
-
-def _resolve_selected_profile(
-    ctx: click.Context,
-) -> Profile | VirtualProfile:
-    """Resuelve el perfil actualmente seleccionado."""
-    profile_selector = ctx.obj["session"].profile
-
-    if profile_selector is None:
-        raise click.ClickException(
-            "No hay un perfil seleccionado. Usa 'mousectl profile select <índice o nombre>'."
-        )
-
-    if isinstance(profile_selector, int):
-        return resolve_profile(ctx)
-
-    return VirtualProfile.load(profile_selector)
 
 
 def _get_button(profile: Profile, button_index: int) -> Button:
@@ -225,7 +208,7 @@ def button_group() -> None:
 @click.pass_context
 def button_list(ctx: click.Context) -> None:
     """Lista los botones del perfil seleccionado."""
-    profile = _resolve_selected_profile(ctx)
+    profile = resolve_selected_profile(ctx)
 
     if isinstance(profile, VirtualProfile):
         click.echo(f"Perfil virtual: {profile.name}")
@@ -251,6 +234,12 @@ def button_list(ctx: click.Context) -> None:
 @click.option("--special", type=str, required=False)
 @click.option("--macro", type=str, required=False)
 @click.option("--commit/--no-commit", default=True)
+@click.option(
+    "--apply",
+    is_flag=True,
+    default=False,
+    help="Aplica el cambio al perfil integrado activo y confirma el cambio en el hardware.",
+)
 @click.pass_context
 def button_set(
     ctx: click.Context,
@@ -259,16 +248,20 @@ def button_set(
     special: str | None,
     macro: str | None,
     commit: bool,
+    apply: bool,
 ) -> None:
-    """
-    Cambia la acción de un botón del perfil seleccionado.
+    """Cambia la acción de un botón del perfil seleccionado.
+
+    En un perfil integrado modifica directamente el perfil del dispositivo.
+    En un perfil virtual modifica y guarda su archivo. Con --apply, además,
+    aplica el cambio al perfil integrado activo.
 
     Ejemplos de uso:
        mousectl button set 0 --button 1
        mousectl button set 1 --special doubleclick
        mousectl button set 2 --macro 'press:a,release:a'
     """
-    profile = _resolve_selected_profile(ctx)
+    profile = resolve_selected_profile(ctx)
 
     if isinstance(profile, VirtualProfile):
         new_button = _build_button_schema(
@@ -287,6 +280,7 @@ def button_set(
             resolutions=profile.config.resolutions,
             buttons=buttons,
             leds=profile.config.leds,
+            active_resolution=profile.config.active_resolution,
         )
 
         updated_profile = VirtualProfile(
@@ -295,7 +289,23 @@ def button_set(
         )
         updated_profile.save()
 
-        click.echo(f"Botón {index} actualizado en el perfil virtual '{profile.name}'.")
+        if apply:
+            device = resolve_device(ctx)
+            target = device.active_profile
+            target.apply_buttons(buttons)
+            device.commit()
+
+            click.echo(
+                f"Botón {index} actualizado en el perfil virtual "
+                f"'{profile.name}' y aplicado al perfil integrado "
+                f"{target.index}."
+            )
+        else:
+            click.echo(
+                f"Botón {index} actualizado en el perfil virtual "
+                f"'{profile.name}'. El cambio se aplicará al hacer switch."
+            )
+
         return
 
     button_instance = _get_button(profile, index)
@@ -331,7 +341,7 @@ def button_get(
     index: int,
 ) -> None:
     """Muestra la configuración de un botón del perfil seleccionado."""
-    profile = _resolve_selected_profile(ctx)
+    profile = resolve_selected_profile(ctx)
 
     if isinstance(profile, VirtualProfile):
         button = _get_virtual_button(profile, index)
